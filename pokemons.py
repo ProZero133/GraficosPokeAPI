@@ -11,57 +11,50 @@ def get_pokemon_info(pokemon_id_or_name):
     
     if response.status_code == 200:
         data = response.json()
-        pokemon_name = data["name"]
-        pokemon_types = [t["type"]["name"] for t in data["types"]]
+        nombre_pokemon = data["name"]
+        tipo_pokemon = [t["type"]["name"] for t in data["types"]]
         generation_url = data["species"]["url"]
         generation_info = requests.get(generation_url).json()
         generation_name = generation_info["generation"]["name"]
         
-        return pokemon_name, pokemon_types, generation_name
+        return nombre_pokemon, tipo_pokemon, generation_name
     else:
         print(f"No se pudo obtener la información del Pokémon con ID o nombre {pokemon_id_or_name}.")
         return None, None, None
         
-def save_pokemon_data(pokemon_id_or_name):
-    # Obtén los datos del Pokémon
-    pokemon_name, pokemon_types, generation_name = get_pokemon_info(pokemon_id_or_name)
+def AlmacenarEnMongo(pokemon_id_or_name):
+    nombre_pokemon, tipo_pokemon, generation_name = get_pokemon_info(pokemon_id_or_name)
     
-    # Crea un documento con los datos obtenidos
-    if pokemon_name:
+    if nombre_pokemon:
         pokemon_data = {
             "pokemon_id": pokemon_id_or_name,
-            "name": pokemon_name,
-            "types": pokemon_types,
+            "name": nombre_pokemon,
+            "types": tipo_pokemon,
             "generation": generation_name
         }
-        # Inserta el documento en la colección de MongoDB
+
         collection.insert_one(pokemon_data)
 
-def get_last_stored_pokemon_id():
-    # Encuentra el Pokémon con el ID más alto en la base de datos
-    last_pokemon = collection.find_one({}, sort=[("pokemon_id", -1)])
+def IdUltimoIngresado():
+    UltimaIDPokemon = collection.find_one({}, sort=[("pokemon_id", -1)])
     
-    # Si no hay ningún documento, comienza desde el ID 1
-    if last_pokemon is None:
+    if UltimaIDPokemon is None:
         return 1
     
-    # Si hay un documento, devuelve el ID del último Pokémon almacenado + 1
-    return last_pokemon["pokemon_id"] + 1
+    return UltimaIDPokemon["pokemon_id"] + 1
 
-# Obtener el ID desde el que comenzar a realizar solicitudes
-start_id = get_last_stored_pokemon_id()
+start_id = IdUltimoIngresado()
 print("reanudando desde el ID", start_id)
 
-# Llamamos a la función para obtener la información de los Pokémon con ID del 1 al 200
-for pokemon_id in range(start_id, 201):
+for pokemon_id in range(start_id, 1001):
     print(f"Obteniendo información del Pokémon con ID {pokemon_id}...")
-    pokemon_name, pokemon_types, generation_name = get_pokemon_info(pokemon_id)
-    if pokemon_name:
-        print(f"Nombre del Pokémon: {pokemon_name}")
-        print(f"Tipo(s) del Pokémon: {', '.join(pokemon_types)}")
+    nombre_pokemon, tipo_pokemon, generation_name = get_pokemon_info(pokemon_id)
+    if nombre_pokemon:
+        print(f"Nombre del Pokémon: {nombre_pokemon}")
+        print(f"Tipo(s) del Pokémon: {', '.join(tipo_pokemon)}")
         print(f"Generación del Pokémon: {generation_name}")
         print()
-        save_pokemon_data(pokemon_id)
+        AlmacenarEnMongo(pokemon_id)
         print(f"Datos del Pokémon con ID {pokemon_id} guardados en la base de datos.\n")
 
 
