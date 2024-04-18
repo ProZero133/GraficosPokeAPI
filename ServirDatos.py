@@ -2,10 +2,8 @@ from flask import Flask, render_template, json, jsonify
 from pymongo import MongoClient
 from collections import defaultdict
 
-# Crea una instancia de la aplicación Flask
 app = Flask(__name__)
 
-# Configura la conexión con MongoDB
 client = MongoClient("mongodb://localhost:27017/")
 db = client["pokemon_db"]
 collection = db["pokemon_collection"]
@@ -16,7 +14,6 @@ def index():
 
 @app.route('/api/pokemonData')
 def pokemon_data():
-    # Define las generaciones que quieres incluir
     FiltrarGeneracion = ["generation-i", "generation-ii", "generation-iii", "generation-iv"]
 
     # Consulta la colección de MongoDB y agrupa por generación y tipo
@@ -31,7 +28,7 @@ def pokemon_data():
             for pokemon_type in types:
                 TiposPorGeneracion[generation][pokemon_type] += 1
     
-    # Combina las generaciones en pares
+    # Combina las generaciones
     combined_data = []
     for i in range(0, len(FiltrarGeneracion), 2):
         combined_types_count = defaultdict(int)
@@ -43,9 +40,7 @@ def pokemon_data():
             "types": [{"type": pokemon_type, "count": count} for pokemon_type, count in combined_types_count.items()]
         })
     
-    # Devuelve los datos como JSON
     return jsonify(combined_data)
 
-# Ejecuta la aplicación en modo de desarrollo
 if __name__ == '__main__':
     app.run(debug=True)
